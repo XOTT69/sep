@@ -27,7 +27,7 @@
         <input id="uetr" name="uetr" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx" maxlength="36">
         <div class="form-row">
           <div class="amount-field"><label for="amount">Сума міжбанківського переказу</label><div class="amount-wrap"><input id="amount" name="amount" inputmode="decimal" placeholder="Наприклад, 1600.00"><span>UAH</span></div></div>
-          <button class="primary" type="submit">Підготувати перевірку <span>→</span></button>
+          <button class="primary" type="submit">Відкрити ТрекСЕП <span>↗</span></button>
         </div>
         <p class="hint" id="form-hint">Дані залишаються у вашому браузері.</p>
       </form>
@@ -54,7 +54,15 @@
       </aside>
     </section>
 
-    <section class="footer-note">
+
+    <section class="panel timeline-panel">
+      <div class="panel-heading"><div><span class="step">04</span><h2>Розбір скопійованої історії ТрекСЕП</h2></div><span class="tag">Без API</span></div>
+      <p class="muted small">Після пошуку на сайті НБУ скопіюй таблицю історії (ЧАС / УЧАСНИК / СТАТУС) та встав її сюди. Сервіс побудує хронологію й підсвітить важливі етапи.</p>
+      <textarea id="timeline-input" rows="6" placeholder="07.11.2026 20:12:10    АТ &quot;УНІВЕРСАЛ БАНК&quot;    Створив платіж&#10;07.11.2026 20:14:31    СЕП НБУ    Передав платіж"></textarea>
+      <div class="actions"><button id="timeline-btn" class="primary" type="button">Проаналізувати історію</button><button id="timeline-clear" class="secondary" type="button">Очистити</button></div>
+      <div id="timeline-output" class="analysis-output hidden" aria-live="polite"></div>
+    </section>
+\n    <section class="footer-note">
       <div><strong>Немає XML-повідомлення?</strong><p>Перевір платіж у офіційному сервісі НБУ та, за наявності, експортуй повідомлення для аналізу.</p></div>
       <a class="external-link" href="https://tracksep.bank.gov.ua/" target="_blank" rel="noopener noreferrer">Відкрити ТрекСЕП НБУ ↗</a>
     </section>
