@@ -36,7 +36,7 @@
   const show = (el, html) => {el.innerHTML=html;el.classList.remove("hidden");};
   const hide = (el) => el.classList.add("hidden");
 
-  $("lookup-form").addEventListener("submit", e => {
+  $("lookup-form").addEventListener("submit", async e => {
     e.preventDefault();
     const uetr=$("uetr").value.trim(), amount=$("amount").value.trim().replace(",",".");
     const out=$("lookup-result");
@@ -44,7 +44,7 @@
     if(!amount || !/^\d+(\.\d{1,2})?$/.test(amount) || Number(amount)<=0){show(out,'<div class="result-title warning">Вкажи коректну суму платежу</div>Для запиту ТрекСЕП потрібні одночасно UETR та сума.');return;}
     const url="https://tracksep.bank.gov.ua/";
     window.open(url,"_blank","noopener");
-    const payload=uetr+"\\n"+amount;
+    const payload=uetr+"\n"+amount;
     let copied=false;
     try{await navigator.clipboard.writeText(payload);copied=true;}catch(_){}
     show(out,'<div class="result-title">Підготовлено дані для пошуку</div><div>UETR: <b>'+escapeHtml(uetr)+'</b><br>Сума: <b>'+escapeHtml(amount)+' UAH</b></div><p class="muted">ТрекСЕП відкрито в окремій вкладці. Встав UETR і суму у форму НБУ та обери «Повна відповідь». '+(copied?'Реквізити скопійовано в буфер обміну.':'Не вдалося автоматично скопіювати реквізити — скопіюй їх вручну.')+'</p><div class="result-actions"><a href="'+url+'" target="_blank" rel="noopener">Відкрити ТрекСЕП ↗</a><a href="#" id="copy-lookup">Скопіювати UETR та суму</a></div>');
@@ -61,12 +61,12 @@
   $("timeline-btn").addEventListener("click",()=>{
     const raw=$("timeline-input").value.trim(),out=$("timeline-output");
     if(!raw){show(out,'<span class="warning">Встав сюди скопійовану таблицю ТрекСЕП.</span>');return;}
-    const lines=raw.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean),rows=[];
+    const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),rows=[];
     const known=["Створив платіж","Передав платіж","Списав з рахунку Платника","Отримав платіж","Зарахував на рахунок Отримувача","Зарахував на рахунок нез’ясованих сум","Зарахував на рахунок нез'ясованих сум","Призупинив зарахування","Призупинив виконання","Платіж відхилено","Повернення коштів","Зарахування призупинено з нормативних причин"];
     for(const line of lines){
-      const m=line.match(/(\\d{2}\\.\\d{2}\\.\\d{4})\\s+(\\d{2}:\\d{2}:\\d{2})\\s+(.+)/);
+      const m=line.match(/(\d{2}\.\d{2}\.\d{4})\s+(\d{2}:\d{2}:\d{2})\s+(.+)/);
       if(!m)continue;
-      const tail=m[3].split(/\\t+|\\s{2,}/).map(x=>x.trim()).filter(Boolean);
+      const tail=m[3].split(/\t+|\s{2,}/).map(x=>x.trim()).filter(Boolean);
       if(tail.length>=2){rows.push({date:m[1],time:m[2],participant:tail[0],status:tail.slice(1).join(" ")});continue;}
       let split=-1;
       for(const s of known){const i=m[3].indexOf(s);if(i>0&&(split<0||i<split))split=i;}
