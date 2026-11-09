@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eff6ff">
+  <meta name="description" content="Локальний аналізатор статусів платежів СЕП за UETR та повідомленнями ISO 20022.">
+  <title>SEP Analyzer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="brand-mark">S</span><span>SEP <b>Analyzer</b></span></a>
+    <div class="top-meta"><span class="live-dot"></span> Локальний режим <span class="version">MVP 0.1</span></div>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">ІНСТРУМЕНТ ДЛЯ АНАЛІЗУ ПЛАТЕЖІВ</div>
+      <h1>Що сталося з платежем?</h1>
+      <p>Перевір UETR, розбери історію ТрекСЕП або знайди код причини повернення в ISO 20022.</p>
+    </section>
+
+    <section class="panel search-panel">
+      <div class="panel-heading"><div><span class="step">01</span><h2>Ідентифікатори платежу</h2></div><span class="muted small">Потрібні UETR та сума</span></div>
+      <form id="lookup-form">
+        <label for="uetr">UETR</label>
+        <input id="uetr" name="uetr" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx" maxlength="36">
+        <div class="form-row">
+          <div class="amount-field"><label for="amount">Сума міжбанківського переказу</label><div class="amount-wrap"><input id="amount" name="amount" inputmode="decimal" placeholder="Наприклад, 1600.00"><span>UAH</span></div></div>
+          <button class="primary" type="submit">Підготувати перевірку <span>→</span></button>
+        </div>
+        <p class="hint" id="form-hint">Дані залишаються у вашому браузері.</p>
+      </form>
+      <div id="lookup-result" class="lookup-result hidden" aria-live="polite"></div>
+    </section>
+
+    <section class="grid">
+      <article class="panel import-panel">
+        <div class="panel-heading"><div><span class="step">02</span><h2>Аналіз повідомлення</h2></div><span class="tag">ISO 20022</span></div>
+        <p class="muted">Завантаж XML або встав повідомлення <code>trck.002</code>, <code>pacs.004</code> чи <code>pacs.002</code>. Аналіз виконується локально.</p>
+        <label class="dropzone" for="xml-file"><span class="upload-icon">↑</span><strong>Обрати XML-файл</strong><span class="muted small">або перетягнути сюди</span><input id="xml-file" type="file" accept=".xml,.txt,text/xml,application/xml"></label>
+        <label for="xml-input" class="sub-label">Або вставити XML-текст</label>
+        <textarea id="xml-input" rows="5" placeholder="&lt;Document&gt;...&lt;/Document&gt;"></textarea>
+        <div class="actions"><button id="analyze-btn" class="primary" type="button">Проаналізувати повідомлення</button><button id="clear-btn" class="secondary" type="button">Очистити</button></div>
+        <div id="analysis-output" class="analysis-output hidden" aria-live="polite"></div>
+      </article>
+
+      <aside class="panel guide-panel">
+        <div class="panel-heading"><div><span class="step">03</span><h2>Що можна встановити</h2></div></div>
+        <div class="guide-item"><span class="guide-icon blue">↗</span><div><strong>Історія руху</strong><p>Етапи, учасники та час за trck.002.</p></div></div>
+        <div class="guide-item"><span class="guide-icon orange">!</span><div><strong>Причина повернення</strong><p>Код і додатковий текст із pacs.004, якщо вони присутні.</p></div></div>
+        <div class="guide-item"><span class="guide-icon green">✓</span><div><strong>Пояснення коду</strong><p>Довідкова розшифровка стандартних кодів ISO 20022.</p></div></div>
+        <div class="notice"><strong>Важливо</strong><p>Статус «зарахував на рахунок нез’ясованих сум» сам по собі не доводить помилку IBAN або ЄДРПОУ. Точна причина доступна лише якщо її передано в повідомленні.</p></div>
+      </aside>
+    </section>
+
+    <section class="footer-note">
+      <div><strong>Немає XML-повідомлення?</strong><p>Перевір платіж у офіційному сервісі НБУ та, за наявності, експортуй повідомлення для аналізу.</p></div>
+      <a class="external-link" href="https://tracksep.bank.gov.ua/" target="_blank" rel="noopener noreferrer">Відкрити ТрекСЕП НБУ ↗</a>
+    </section>
+    <footer>SEP Analyzer · Інструмент попереднього аналізу. Не є офіційним сервісом НБУ чи банку.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
