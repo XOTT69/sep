@@ -88,7 +88,8 @@
     show(out,outHtml);
   });
   $("timeline-clear").addEventListener("click",()=>{$("timeline-input").value="";hide($("timeline-output"));});
-\n  $("analyze-btn").addEventListener("click",()=>{
+
+  $("analyze-btn").addEventListener("click",()=>{
     const raw=$("xml-input").value.trim(),out=$("analysis-output");
     if(!raw){show(out,'<span class="warning">Додай XML-текст або обери файл.</span>');return;}
     const parser=new DOMParser(),doc=parser.parseFromString(raw,"application/xml");
