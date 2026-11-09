@@ -43,17 +43,52 @@
     if(!UETR_RE.test(uetr)){show(out,'<div class="result-title warning">Перевір формат UETR</div>Очікується UUID формату xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx.');return;}
     if(!amount || !/^\d+(\.\d{1,2})?$/.test(amount) || Number(amount)<=0){show(out,'<div class="result-title warning">Вкажи коректну суму платежу</div>Для запиту ТрекСЕП потрібні одночасно UETR та сума.');return;}
     const url="https://tracksep.bank.gov.ua/";
-    show(out,'<div class="result-title">Дані підготовлено</div><div>UETR: <b>'+escapeHtml(uetr)+'</b><br>Сума: <b>'+escapeHtml(amount)+' UAH</b></div><p class="muted">Автоматичний запит до НБУ поки не підключений: публічний інтерфейс не надає підтвердженого стороннього API. Відкрий ТрекСЕП і введи ці два значення.</p><div class="result-actions"><a href="'+url+'" target="_blank" rel="noopener">Відкрити ТрекСЕП ↗</a><a href="#" id="copy-lookup">Скопіювати UETR та суму</a></div>');
-    $("copy-lookup").addEventListener("click",ev=>{ev.preventDefault();navigator.clipboard?.writeText("UETR: "+uetr+"\nСума: "+amount+" UAH");ev.target.textContent="Скопійовано ✓";});
+    window.open(url,"_blank","noopener");
+    const payload=uetr+"\\n"+amount;
+    let copied=false;
+    try{await navigator.clipboard.writeText(payload);copied=true;}catch(_){}
+    show(out,'<div class="result-title">Підготовлено дані для пошуку</div><div>UETR: <b>'+escapeHtml(uetr)+'</b><br>Сума: <b>'+escapeHtml(amount)+' UAH</b></div><p class="muted">ТрекСЕП відкрито в окремій вкладці. Встав UETR і суму у форму НБУ та обери «Повна відповідь». '+(copied?'Реквізити скопійовано в буфер обміну.':'Не вдалося автоматично скопіювати реквізити — скопіюй їх вручну.')+'</p><div class="result-actions"><a href="'+url+'" target="_blank" rel="noopener">Відкрити ТрекСЕП ↗</a><a href="#" id="copy-lookup">Скопіювати UETR та суму</a></div>');
+    $("copy-lookup").addEventListener("click",async ev=>{ev.preventDefault();try{await navigator.clipboard.writeText(payload);ev.target.textContent="Скопійовано ✓";}catch(_){ev.target.textContent="Скопіюй вручну: "+uetr+" / "+amount;}});
   });
 
-  $("xml-file").addEventListener("change", async e => {
+    $("xml-file").addEventListener("change", async e => {
     const file=e.target.files?.[0]; if(!file)return;
     $("xml-input").value=await file.text();
     $("form-hint").textContent="Завантажено: "+file.name;
   });
   $("clear-btn").addEventListener("click",()=>{$("xml-input").value="";$("xml-file").value="";hide($("analysis-output"));});
-  $("analyze-btn").addEventListener("click",()=>{
+
+  $("timeline-btn").addEventListener("click",()=>{
+    const raw=$("timeline-input").value.trim(),out=$("timeline-output");
+    if(!raw){show(out,'<span class="warning">Встав сюди скопійовану таблицю ТрекСЕП.</span>');return;}
+    const lines=raw.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean),rows=[];
+    const known=["Створив платіж","Передав платіж","Списав з рахунку Платника","Отримав платіж","Зарахував на рахунок Отримувача","Зарахував на рахунок нез’ясованих сум","Зарахував на рахунок нез'ясованих сум","Призупинив зарахування","Призупинив виконання","Платіж відхилено","Повернення коштів","Зарахування призупинено з нормативних причин"];
+    for(const line of lines){
+      const m=line.match(/(\\d{2}\\.\\d{2}\\.\\d{4})\\s+(\\d{2}:\\d{2}:\\d{2})\\s+(.+)/);
+      if(!m)continue;
+      const tail=m[3].split(/\\t+|\\s{2,}/).map(x=>x.trim()).filter(Boolean);
+      if(tail.length>=2){rows.push({date:m[1],time:m[2],participant:tail[0],status:tail.slice(1).join(" ")});continue;}
+      let split=-1;
+      for(const s of known){const i=m[3].indexOf(s);if(i>0&&(split<0||i<split))split=i;}
+      if(split>0)rows.push({date:m[1],time:m[2],participant:m[3].slice(0,split).trim(),status:m[3].slice(split).trim()});
+    }
+    if(!rows.length){show(out,'<span class="warning">Не вдалося розпізнати рядки. Скопіюй саме таблицю з трьома колонками; між колонками мають зберегтися табуляції або кілька пробілів.</span>');return;}
+    const flags=[];
+    rows.forEach(r=>{const s=r.status.toLowerCase();
+      if(s.includes("нез’ясован")||s.includes("нез'ясован"))flags.push("Кошти зараховані на рахунок нез’ясованих сум. Це означає, що кошти очікують з’ясування/ідентифікації для подальшого зарахування; сам статус не називає конкретну причину.");
+      if(s.includes("призупинив зарахування")||s.includes("нормативних причин")||s.includes("додаткові перевірки"))flags.push("Зарахування призупинене для перевірок. Це не є доказом помилки IBAN або ЄДРПОУ.");
+      if(s.includes("відхил")||s.includes("повернен"))flags.push("В історії є відхилення або повернення. Для точної причини потрібне повідомлення pacs.004 / pacs.002 або пояснення банку.");
+    });
+    let outHtml='<div class="result-title">Розпізнано подій: '+rows.length+'</div><div class="timeline-list">';
+    rows.forEach(r=>outHtml+='<div class="status-row"><span class="status-time">'+escapeHtml(r.date+" "+r.time)+'</span><div><b>'+escapeHtml(r.status)+'</b><div class="muted">'+escapeHtml(r.participant)+'</div></div></div>');
+    outHtml+='</div>';
+    const unique=[...new Set(flags)];
+    if(unique.length)outHtml+='<div class="reason"><strong>Інтерпретація статусів</strong><ul>'+unique.map(x=>'<li>'+escapeHtml(x)+'</li>').join("")+'</ul></div>';
+    outHtml+='<p class="muted small">Аналіз базується лише на скопійованій історії. Він не встановлює причину повернення, якщо НБУ її не показує.</p>';
+    show(out,outHtml);
+  });
+  $("timeline-clear").addEventListener("click",()=>{$("timeline-input").value="";hide($("timeline-output"));});
+\n  $("analyze-btn").addEventListener("click",()=>{
     const raw=$("xml-input").value.trim(),out=$("analysis-output");
     if(!raw){show(out,'<span class="warning">Додай XML-текст або обери файл.</span>');return;}
     const parser=new DOMParser(),doc=parser.parseFromString(raw,"application/xml");
